@@ -26,12 +26,10 @@ public class MoveInfo : MonoBehaviour
         transform.position = position;
     }
 
-    public void BounceX() 
+    public void Reset()
     {
-        direction.x *= -1;
-    }
-    public void BounceY()
-    {
-        direction.y *= -1;
+        direction = Vector2.zero;
+        velocity = Vector2.zero;
+        position = Vector2.zero;
     }
 }

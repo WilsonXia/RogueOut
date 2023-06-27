@@ -6,15 +6,15 @@ using UnityEngine;
 [RequireComponent(typeof(ObjectInfo))]
 public abstract class Projectile : MonoBehaviour
 {
-    // Properties
+    // Fields
     protected ObjectInfo objInfo;
     protected MoveInfo moveInfo;
-
     [SerializeField]
     protected float lifeTime = 10f;
     [SerializeField]
     protected int bounceCount;
 
+    // Properties
     public ObjectInfo ObjectInfo { get { return objInfo; } }
     public MoveInfo MoveInfo { get { return moveInfo; } }
     public float Lifetime { get { return lifeTime; } set { lifeTime = value; } }
