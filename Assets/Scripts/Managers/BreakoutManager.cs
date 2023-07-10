@@ -5,13 +5,18 @@ using UnityEngine;
 public class BreakoutManager : MonoBehaviour
 {
     // Start is called before the first frame update
-    public Ball ball;
-    public Paddle paddle;
-    public Brick brickPrefab;
+    Ball ball;
+    Paddle paddle;
+    public GameObject ballObject;
+    public GameObject paddleObject;
+    public GameObject brickPrefab;
     public GameObject wallPrefab;
     public GameObject boundingBox;
+    public BattleManager battleM;
+    [SerializeField]
     Vector2 boundPoint;
 
+    [SerializeField]
     int lives;
     bool lifeLost;
     float timer;
@@ -22,9 +27,18 @@ public class BreakoutManager : MonoBehaviour
     
     private void Start()
     {
-        lives = 3;
+        ball = ballObject.GetComponent<Ball>();
+        paddle = paddleObject.GetComponent<Paddle>();
         bricks = new List<GameObject>();
         boundPoint = boundingBox.GetComponent<SpriteRenderer>().bounds.max;
+        Refresh();
+    }
+
+    void Refresh()
+    {
+        lives = 3;
+        paddle.Reset();
+        EmptyList(bricks);
     }
     // Update is called once per frame
     void Update()
@@ -51,6 +65,12 @@ public class BreakoutManager : MonoBehaviour
             CheckPaddle();
             CleanList(bricks);
         }
+        else
+        {
+            // Clear the Game
+            Refresh();
+            battleM.ChangeState(TurnState.Menu);
+        }
     }
     #region Collisions
     // Check Collisions
@@ -69,23 +89,32 @@ public class BreakoutManager : MonoBehaviour
         if(LeftBoundCheck(ball.ObjectInfo.MaxX)) 
         {
             ball.MoveInfo.Position = new Vector2(boundPoint.x - ball.ObjectInfo.Radius, ball.MoveInfo.Position.y);
-            ball.BounceX();
+            if(ball.MoveInfo.Direction.x > 0)
+            {
+                ball.BounceX();
+            }
         }
         else if(RightBoundCheck(ball.ObjectInfo.MinX))
         {
             ball.MoveInfo.Position = new Vector2(-boundPoint.x + ball.ObjectInfo.Radius, ball.MoveInfo.Position.y);
-            ball.BounceX();
+            if (ball.MoveInfo.Direction.x < 0)
+            {
+                ball.BounceX();
+            }
         }
         if(TopBoundCheck(ball.ObjectInfo.MaxY))
         {
             ball.MoveInfo.Position = new Vector2(ball.MoveInfo.Position.x, boundPoint.y - ball.ObjectInfo.Radius);
-            ball.BounceY();
+            if (ball.MoveInfo.Direction.y > 0)
+            {
+                ball.BounceY();
+            }
         }
-        else if (BottomBoundCheck(ball.ObjectInfo.MinY))
+        else if (BottomBoundCheck(ball.ObjectInfo.MinY) && !lifeLost)
         {
             lives--;
             lifeLost = true;
-            ball.MoveInfo.Reset();
+            ball.Reset();
         }
         // Check other projectiles LATER
     }// Fix when other projectiles come
@@ -120,12 +149,31 @@ public class BreakoutManager : MonoBehaviour
                 // Decide how to bounce ball
                 // Obtain deltaX and deltaY
                 // Compare values
-                Vector2 toBall = ball.transform.position - br.transform.position;
-                if(Mathf.Abs(toBall.x) > Mathf.Abs(toBall.y))
+                float deltaX, deltaY;
+                SpriteRenderer brickSprite = br.GetComponent<SpriteRenderer>();
+                if(ball.MoveInfo.Direction.x > 0)
+                {
+                    deltaX = brickSprite.bounds.min.x - ball.Right;
+                }
+                else
+                {
+                    deltaX = ball.Right - brickSprite.bounds.max.x;
+                }
+                if(ball.MoveInfo.Direction.y > 0)
+                {
+                    deltaY = brickSprite.bounds.min.y - ball.Top;
+                }
+                else
+                {
+                    deltaY = brickSprite.bounds.min.y - ball.Bottom;
+                }
+                //Vector2 toBall = ball.transform.position - br.transform.position;
+                //if(Mathf.Abs(toBall.x) > Mathf.Abs(toBall.y))
+                if (deltaX > deltaY)
                 {
                     ball.BounceX();
                 }
-                else if (Mathf.Abs(toBall.x) < Mathf.Abs(toBall.y))
+                else if (deltaX < deltaY)
                 {
                     ball.BounceY();
                 }
@@ -165,6 +213,15 @@ public class BreakoutManager : MonoBehaviour
             }
         }
     }
+    public void EmptyList(List<GameObject> list)
+    {
+        while(list.Count > 0)
+        {
+            GameObject go = list[0];
+            Destroy(go);
+            list.RemoveAt(0);
+        }
+    }
 
     // AABB Collision
     bool AABBCollision(GameObject a, GameObject b)
@@ -187,7 +244,7 @@ public class BreakoutManager : MonoBehaviour
         float height = 1;
         Vector2 spawnPoint = new Vector2(boundPoint.x - width/2, boundPoint.y - height/2);
         Vector2 pos = new Vector2(Random.Range(-spawnPoint.x, spawnPoint.x), Random.Range(0, spawnPoint.y));
-        GameObject newBrick = Instantiate(brickPrefab, pos, Quaternion.identity).gameObject;
+        GameObject newBrick = Instantiate(brickPrefab, pos, Quaternion.identity);
         bricks.Add(newBrick);
     }
     void CreateWall()

@@ -21,7 +21,8 @@ public class MoveInfo : MonoBehaviour
     {
         // Update so that the projectile moves in the direction
         // it is fired in.
-        velocity = direction.normalized * moveSpeed * Time.deltaTime;
+        direction = direction.normalized;
+        velocity = direction * moveSpeed * Time.deltaTime;
         position += velocity;
         transform.position = position;
     }
@@ -30,6 +31,12 @@ public class MoveInfo : MonoBehaviour
     {
         direction = Vector2.zero;
         velocity = Vector2.zero;
-        position = Vector2.zero;
+    }
+
+    public void OnDrawGizmos()
+    {
+        Gizmos.color = Color.yellow;
+        Vector2 direct = new Vector2(transform.position.x + direction.x, transform.position.y + direction.y);
+        Gizmos.DrawLine(transform.position, direct);
     }
 }
