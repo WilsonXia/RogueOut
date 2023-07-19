@@ -27,13 +27,13 @@ public class BreakoutManager : MonoBehaviour
     bool lifeLost;
     int score;
     float timer;
-    //[SerializeField]
-    //float gameTime;
-    //float gameTimer;
+    
+    public float gameTime;
+    float gameTimer;
     bool started = false;
 
     // Properties
-    public int Score { get { return score; } }
+    public float Timer { get { return gameTimer; } }
     public int BricksLeft { get { return bricks.Count; } }
 
     private void Start()
@@ -53,6 +53,7 @@ public class BreakoutManager : MonoBehaviour
             // Bricks and Bounding Box
             bricks = new List<GameObject>();
             boundPoint = boundingBox.GetComponent<SpriteRenderer>().bounds.max;
+            gameTimer = gameTime;
             started = true;
         }
     }
@@ -76,12 +77,12 @@ public class BreakoutManager : MonoBehaviour
     {
         if (battleM.State == BattleState.Breakout)
         {
-            //gameTimer += Time.deltaTime;
-            //if(gameTimer >= gameTime) 
-            //{
-            //    gameTimer = 0;
-            //    EndGame();
-            //}
+            gameTimer -= Time.deltaTime;
+            if(gameTimer < 0) 
+            {
+                gameTimer = gameTime;
+                EndGame();
+            }
             if(lives > 0 && bricks.Count > 0) // If there are still lives, AND bricks to hit, play
             {
                 // Handle life lost

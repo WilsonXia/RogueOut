@@ -9,6 +9,7 @@ public class BattleHUD : MonoBehaviour
     public GameObject actionSelector;
     public GameObject tutorialScreen;
     public TextMeshProUGUI scoreText;
+    public TextMeshProUGUI timeText;
     public BattleManager battleM;
 
     // Properties
@@ -24,40 +25,44 @@ public class BattleHUD : MonoBehaviour
     void Update()
     {
         if(battleM.State == BattleState.Breakout)
-        scoreText.text = string.Format("{0}", battleM.Breakout.BricksLeft);
+        {
+            scoreText.text = string.Format("{0}", battleM.Breakout.BricksLeft);
+            timeText.text = string.Format("{0}", (int) battleM.Breakout.Timer);
+        }
+        
     }
 
     public void ShowUI(BattleState state)
     {
         switch (state)
         {
+            case BattleState.Start:
+                tutorialScreen.SetActive(false);
+                gameOverScreen.SetActive(false);
+                victoryScreen.SetActive(false);
+                goto case BattleState.Dialogue;
             case BattleState.Tutorial:
                 tutorialScreen.SetActive(true);
+                actionSelect.SetActive(false);
+                playerPanel.SetActive(false);
                 break;
             case BattleState.Dialogue:
-                tutorialScreen.SetActive(false);
                 speechBox.SetActive(true);
                 actionSelect.SetActive(false);
                 playerPanel.SetActive(false);
                 sideBar.SetActive(false);
-                gameOverScreen.SetActive(false);
-                victoryScreen.SetActive(false);
                 break;
             case BattleState.Menu:
                 speechBox.SetActive(false);
                 actionSelect.SetActive(true);
                 playerPanel.SetActive(true);
                 sideBar.SetActive(false);
-                gameOverScreen.SetActive(false);
-                victoryScreen.SetActive(false);
                 break;
             case BattleState.Breakout:
                 speechBox.SetActive(false);
                 actionSelect.SetActive(false);
                 playerPanel.SetActive(false);
                 sideBar.SetActive(true);
-                gameOverScreen.SetActive(false);
-                victoryScreen.SetActive(false);
                 break;
             case BattleState.GameOver:
                 speechBox.SetActive(false);
@@ -65,14 +70,12 @@ public class BattleHUD : MonoBehaviour
                 playerPanel.SetActive(false);
                 sideBar.SetActive(false);
                 gameOverScreen.SetActive(true);
-                victoryScreen.SetActive(false);
                 break;
             case BattleState.Victory:
                 speechBox.SetActive(false);
                 actionSelect.SetActive(false);
                 playerPanel.SetActive(false);
                 sideBar.SetActive(false);
-                gameOverScreen.SetActive(false);
                 victoryScreen.SetActive(true);
                 break;
         }

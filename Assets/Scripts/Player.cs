@@ -55,7 +55,7 @@ public class Player : BattleObject
                 if (Input.GetKeyDown(KeyCode.Space))
                 {
                     // End the tutorial
-                    battleM.ChangeState(BattleState.Dialogue);
+                    battleM.ChangeState(BattleState.Start);
                 }
                 break;
         }

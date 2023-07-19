@@ -5,6 +5,7 @@ using UnityEngine;
 public enum BattleState
 {
     Tutorial,
+    Start,
     Menu,
     Breakout,
     Dialogue,
@@ -45,14 +46,13 @@ public class BattleManager : MonoBehaviour
         sBox = hud.Speech;
         // Setup turn sequence
         turnSequence = new Queue<GameObject>();
-        turnNumber = 0;
+        turnNumber = 1;
+        // Setup Target
         if (enemies.Count == 1)
         {
             target = enemies[0];
         }
         // Defaults
-        SetUpTurnOrder();
-        actingObject = turnSequence.Peek();
         timer = 0;
         if (useTutorial)
         {
@@ -60,7 +60,7 @@ public class BattleManager : MonoBehaviour
         }
         else
         {
-            ChangeState(BattleState.Dialogue);
+            ChangeState(BattleState.Start);
         }
     }
 
@@ -69,11 +69,26 @@ public class BattleManager : MonoBehaviour
     {
         switch (currentState)
         {
+            case BattleState.Start:
+                timer += Time.deltaTime;
+                if (timer > 2.5f)
+                {
+                    timer = 0;
+                    SetUpTurnOrder();
+                    actingObject = turnSequence.Peek();
+                    CheckTurn();
+                }
+                break;
             case BattleState.Dialogue:
                 timer += Time.deltaTime;
                 if (timer > 2.5f)
                 {
                     timer = 0;
+                    if(turnSequence.Count <= 0) 
+                    {
+                        SetUpTurnOrder();
+                        actingObject = turnSequence.Peek();
+                    }
                     CleanSequence();
                     NextTurn();
                 }
@@ -100,32 +115,93 @@ public class BattleManager : MonoBehaviour
             }
         }
         int topEnemySpeed = fastestEnemy.GetComponent<Enemy>().Speed;
-        // if enemy speed < player speed
+        // Decide order based on speed
+        Debug.Log(string.Format("Enemy Spd: {0}  Player Spd: {1}", topEnemySpeed, playerSpeed));
         if (topEnemySpeed < playerSpeed)
         {
-            // Player goes first
-            turnSequence.Enqueue(player);
-            // Followed by enemies
-            foreach (GameObject enemy in enemies)
-            {
-                turnSequence.Enqueue(enemy);
-            }
+            EnqueuePlayer();
         }
         else if (topEnemySpeed > playerSpeed)
         {
-            // Enemies that are faster go first
-            foreach (GameObject enemy in enemies)
+            EnqueueEnemy();
+        }
+        else
+        {
+            float chance = Random.value;
+            Debug.Log(string.Format("Chance: {0}, < 0.5f? {1}", chance, chance < 0.5f));
+            if ( chance < 0.5f)
             {
-                int enemySpeed = enemy.GetComponent<Enemy>().Speed;
-                // If player is not in queue, AND player is faster than that enemy
-                if (!turnSequence.Contains(player) && enemySpeed < playerSpeed)
-                {
-                    // Add the player into the queue
-                    turnSequence.Enqueue(player);
-                }
-                // Adds all enemies after execution
-                turnSequence.Enqueue(enemy);
+                EnqueuePlayer();
             }
+            else
+            {
+                EnqueueEnemy();
+            }
+        }
+    }
+    void CleanSequence()
+    {
+        // Make a makeshift list to hold the dead enemies
+        // In the loop, add enemies that are alive into the new queue
+        // Then empty the dead enemies.
+        List<GameObject> dumpList = new List<GameObject>();
+        Queue<GameObject> newSequence = new Queue<GameObject>();
+        while (turnSequence.Count > 0)
+        {
+            BattleObject battler = turnSequence.Dequeue().GetComponent<BattleObject>();
+            if (!battler.IsDead)
+            {
+                newSequence.Enqueue(battler.gameObject);
+            }
+            else
+            {
+                dumpList.Add(battler.gameObject);
+            }
+        }
+        for (int i = 0; i < dumpList.Count; i++)
+        {
+            // Remove dead enemies in the dumplist
+            for (int j = 0; j < enemies.Count; j++)
+            {
+                // Check if they are the same enemy
+                if (dumpList[i] == enemies[j])
+                {
+                    // Remove it
+                    enemies.RemoveAt(j);
+                    j = enemies.Count;
+                }
+            }
+            Destroy(dumpList[i]);
+        }
+        turnSequence = newSequence;
+    }
+    void EnqueuePlayer()
+    {
+        Debug.Log(string.Format("Player first"));
+        // Player goes first
+        turnSequence.Enqueue(player);
+        // Followed by enemies
+        foreach (GameObject enemy in enemies)
+        {
+            turnSequence.Enqueue(enemy);
+        }
+    }
+    void EnqueueEnemy()
+    {
+        Debug.Log(string.Format("Enemy first"));
+        int playerSpeed = PlayerOne.Speed;
+        // Enemies that are faster go first
+        foreach (GameObject enemy in enemies)
+        {
+            int enemySpeed = enemy.GetComponent<Enemy>().Speed;
+            // If player is not in queue, AND player is faster than that enemy
+            if (!turnSequence.Contains(player) && enemySpeed < playerSpeed)
+            {
+                // Add the player into the queue
+                turnSequence.Enqueue(player);
+            }
+            // Adds all enemies after execution
+            turnSequence.Enqueue(enemy);
         }
     }
 
@@ -153,16 +229,15 @@ public class BattleManager : MonoBehaviour
             CheckTurn();
         }
     }
-
     void CheckTurn()
     {
         // if Player Turn
         if (actingObject.Equals(player))
         {
-            if (currentState == BattleState.Dialogue)
-            {
+            //if (currentState == BattleState.Dialogue)
+            //{
                 ChangeState(BattleState.Menu);
-            }
+            //}
         }
         else // if Enemy Turn
         {
@@ -223,40 +298,5 @@ public class BattleManager : MonoBehaviour
         currentState = newState;
     }
 
-    void CleanSequence()
-    {
-        // Make a makeshift list to hold the dead enemies
-        // In the loop, add enemies that are alive into the new queue
-        // Then empty the dead enemies.
-        List<GameObject> dumpList = new List<GameObject>();
-        Queue<GameObject> newSequence = new Queue<GameObject>();
-        while (turnSequence.Count > 0)
-        {
-            BattleObject battler = turnSequence.Dequeue().GetComponent<BattleObject>();
-            if (!battler.IsDead)
-            {
-                newSequence.Enqueue(battler.gameObject);
-            }
-            else
-            {
-                dumpList.Add(battler.gameObject);
-            }
-        }
-        for (int i = 0; i < dumpList.Count; i++)
-        {
-            // Remove dead enemies in the dumplist
-            for (int j = 0; j < enemies.Count; j++)
-            {
-                // Check if they are the same enemy
-                if (dumpList[i] == enemies[j])
-                {
-                    // Remove it
-                    enemies.RemoveAt(j);
-                    j = enemies.Count;
-                }
-            }
-            Destroy(dumpList[i]);
-        }
-        turnSequence = newSequence;
-    }
+    
 }

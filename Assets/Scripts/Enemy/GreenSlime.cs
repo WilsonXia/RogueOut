@@ -6,13 +6,13 @@ public class GreenSlime : Enemy
 {
     // Stats
     //  HP:  4
-    //  ATK: 3
+    //  ATK: 2
     //  SPD: 2
     //  XP:  1
     // Start is called before the first frame update
     void Start()
     {
-        SetStats(4,3,2);
+        SetStats(4,2,2);
         SetupSound();
         isAttacking = false;
     }
@@ -45,6 +45,5 @@ public class GreenSlime : Enemy
             message = " does nothing.";
             isAttacking = false;
         }
-        //Debug.Log(name + message + "\n" + chance);
     }
 }
