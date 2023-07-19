@@ -1070,7 +1070,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 197b85fc926fe3b4a993dc3f6148dc80, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useTutorial: 0
+  useTutorial: 1
   currentState: 0
   player: {fileID: 796166868}
   breakoutManager: {fileID: 931711256}
