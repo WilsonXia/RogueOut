@@ -2,56 +2,97 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum ControllerDirection
+{
+    None,
+    Up,
+    Down,
+    Left,
+    Right,
+}
+
+public enum ControllerButton
+{
+    None,
+    A,
+    B
+}
 public class Player : BattleObject
 {
-    // References
-    public Paddle paddle;
-    public Ball ball;
+    /* Name: Player
+     * HP: 15
+     * Atk: 3
+     * Speed: 5
+     */
     public BattleManager battleM;
+    // Controller
+    ControllerDirection currentDirection;
+    ControllerButton currentButton;
 
-    // Update is called once per frame
+    // Properties
+    public ControllerDirection ControllerDirection { get { return currentDirection; } }
+    public ControllerButton ControllerButton { get { return currentButton; } }
+
+    private void Start()
+    {
+        name = "Player";
+        SetStats(15,3,5);
+        SetupSound();
+    }
     void Update()
     {
+        GetButton();
+        GetDirection();
         switch (battleM.State)
         {
-            case TurnState.Breakout:
-                // In Breakout Phase
-                if (Input.GetKey(KeyCode.A))
-                {
-                    paddle.MoveState = Movement.Left;
-                }
-                else if (Input.GetKey(KeyCode.D))
-                {
-                    paddle.MoveState = Movement.Right;
-                }
-                else
-                {
-                    paddle.MoveState = Movement.None;
-                }
+            case BattleState.Dialogue:
                 if (Input.GetKeyDown(KeyCode.Space))
                 {
-                    if (!ball.Launched)
-                    {
-                        ball.Launch();
-                    }
+                    // Advance Dialogue
                 }
                 break;
-           case TurnState.Menu:
-                if (Input.GetKeyDown(KeyCode.S))
+            case BattleState.Tutorial:
+                if (Input.GetKeyDown(KeyCode.Space))
                 {
-                    battleM.ChangeAction(1);
+                    // End the tutorial
+                    battleM.ChangeState(BattleState.Dialogue);
                 }
-                else if (Input.GetKeyDown(KeyCode.W))
-                {
-                    battleM.ChangeAction(-1);
-                }
-                else if (Input.GetKeyDown(KeyCode.Space))
-                {
-                    // Select
-                    battleM.ConfirmAction();
-                }
-                //
                 break;
+        }
+    }
+
+    void GetButton()
+    {
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            currentButton = ControllerButton.A;
+        }
+        else
+        {
+            currentButton = ControllerButton.None;
+        }
+    } // Fix later
+    void GetDirection() // Fix later
+    {
+        if (Input.GetKeyDown(KeyCode.W))
+        {
+            currentDirection = ControllerDirection.Up;
+        }
+        else if (Input.GetKeyDown(KeyCode.S))
+        {
+            currentDirection = ControllerDirection.Down;
+        }
+        else if (Input.GetKey(KeyCode.A))
+        {
+            currentDirection = ControllerDirection.Left;
+        }
+        else if (Input.GetKey(KeyCode.D))
+        {
+            currentDirection = ControllerDirection.Right;
+        }
+        else
+        {
+            currentDirection = ControllerDirection.None;
         }
     }
 }

@@ -28,6 +28,7 @@ public class Ball : Projectile
     {
         moveInfo.Reset();
         moveInfo.Position = new Vector2(0,-3);
+        transform.position = new Vector2(0,-3);
         hasLaunched = false;
     }
 

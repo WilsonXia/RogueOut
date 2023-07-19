@@ -16,6 +16,7 @@ public class ActionSelector : MonoBehaviour
     public GameObject indicator;
     public GameObject atkText, skillText, itemText;
     public BattleManager battleM;
+    ActionSelectorController asController;
     AudioSource selectingSound;
 
     [SerializeField]
@@ -24,8 +25,7 @@ public class ActionSelector : MonoBehaviour
 
     [SerializeField]
     RectTransform atkTransform, skillTransform, itemTransform, iTransform;
-    // Properties
-    public int Act { get { return actionIndex; } set { actionIndex = value; } }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -34,17 +34,21 @@ public class ActionSelector : MonoBehaviour
         skillTransform = skillText.GetComponent<RectTransform>();
         itemTransform = itemText.GetComponent<RectTransform>();
         iTransform = indicator.GetComponent<RectTransform>();
+
+        asController = GetComponent<ActionSelectorController>();
+        asController.SetUp(battleM.PlayerOne, this);
         actionIndex = 0;
+
     }
 
     public void ChangeAction(int step)
     {
         actionIndex += step;
-        if(actionIndex < 0)
+        if (actionIndex < 0)
         {
             actionIndex = 2;
         }
-        else if(actionIndex > 2)
+        else if (actionIndex > 2)
         {
             actionIndex = 0;
         }
@@ -72,19 +76,24 @@ public class ActionSelector : MonoBehaviour
 
     public void ConfirmAction()
     {
-        // Begin Action
+        selectingSound.Play();
         switch (currentAction)
         {
             case Action.Attack:
                 // Trigger a game of Breakout
-                battleM.ChangeState(TurnState.Breakout);
+                battleM.ChangeState(BattleState.Breakout);
                 break;
             case Action.Skill:
                 // Open Skill Sub-Menu
+                Debug.Log("No Skills Implemented yet...");
+                // battleM.ChangeState(TurnState.Dialouge);
                 break;
             case Action.Item:
                 // Open Item Sub-Menu
+                Debug.Log("No Items Implemented yet...");
+                // battleM.ChangeState(TurnState.Dialouge);
                 break;
         }
+        
     }
 }

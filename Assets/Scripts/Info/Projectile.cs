@@ -20,7 +20,6 @@ public abstract class Projectile : MonoBehaviour
     public float Lifetime { get { return lifeTime; } set { lifeTime = value; } }
     public int Bounces { get { return bounceCount; } set { bounceCount = value; } }
 
-    // Start is called before the first frame update
     protected virtual void GetComponents()
     {
         objInfo = GetComponent<ObjectInfo>();
