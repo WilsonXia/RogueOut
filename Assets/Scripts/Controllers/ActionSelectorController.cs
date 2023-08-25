@@ -4,9 +4,9 @@ using UnityEngine;
 
 public class ActionSelectorController : MonoBehaviour
 {
-    Player player;
+    PlayerController player;
     ActionSelector action;
-    public void SetUp(Player p, ActionSelector a) 
+    public void SetUp(PlayerController p, ActionSelector a) 
     {
         player = p;
         action = a;
@@ -14,6 +14,18 @@ public class ActionSelectorController : MonoBehaviour
 
     // Update is called once per frame
     void Update()
+    {
+        if(action.BattleManager.State == BattleState.Targeting) 
+        {
+            TargetSelect();
+        }
+        else if(action.BattleManager.State == BattleState.Menu)
+        {
+            MenuSelect();
+        }
+    }
+
+    void MenuSelect()
     {
         switch (player.ControllerDirection)
         {
@@ -26,10 +38,36 @@ public class ActionSelectorController : MonoBehaviour
             default:
                 break;
         }
-        switch(player.ControllerButton)
+        switch (player.ControllerButton)
         {
             case ControllerButton.A:
-                action.ConfirmAction();
+                action.SelectAction();
+                break;
+            case ControllerButton.B:
+                break;
+            default:
+                break;
+        }
+    }
+    void TargetSelect()
+    {
+        switch (player.ControllerDirection)
+        {
+            case ControllerDirection.Right:
+                if(player.Pressed())
+                action.ChangeTarget(1);
+                break;
+            case ControllerDirection.Left:
+                if(player.Pressed())
+                action.ChangeTarget(-1);
+                break;
+            default:
+                break;
+        }
+        switch (player.ControllerButton)
+        {
+            case ControllerButton.A:
+                action.SelectTarget();
                 break;
             case ControllerButton.B:
                 break;

@@ -16,15 +16,19 @@ public class ActionSelector : MonoBehaviour
     public GameObject indicator;
     public GameObject atkText, skillText, itemText;
     public BattleManager battleM;
+
     ActionSelectorController asController;
     AudioSource selectingSound;
 
-    [SerializeField]
     Action currentAction;
     int actionIndex;
 
-    [SerializeField]
+    GameObject currentTarget;
+    int targetIndex;
+
     RectTransform atkTransform, skillTransform, itemTransform, iTransform;
+
+    public BattleManager BattleManager { get { return battleM; } }
 
     // Start is called before the first frame update
     void Start()
@@ -36,11 +40,32 @@ public class ActionSelector : MonoBehaviour
         iTransform = indicator.GetComponent<RectTransform>();
 
         asController = GetComponent<ActionSelectorController>();
-        asController.SetUp(battleM.PlayerOne, this);
+        asController.SetUp(battleM.PlayerControl, this);
         actionIndex = 0;
 
+        targetIndex = 0;
     }
-
+    public void ChangeTarget(int step)
+    {
+        targetIndex += step;
+        if (targetIndex < 0)
+        {
+            targetIndex = battleM.enemies.Count - 1;
+        }
+        else if (targetIndex > battleM.enemies.Count - 1)
+        {
+            targetIndex = 0;
+        }
+        currentTarget = battleM.enemies[targetIndex];
+        // Set-up target for the manager
+        battleM.SetTarget(currentTarget);
+        selectingSound.Play();
+    }
+    public void SelectTarget()
+    {
+        // Trigger a game of Breakout
+        battleM.ChangeState(BattleState.Breakout);
+    }
     public void ChangeAction(int step)
     {
         actionIndex += step;
@@ -74,14 +99,23 @@ public class ActionSelector : MonoBehaviour
         selectingSound.Play();
     }
 
-    public void ConfirmAction()
+    public void SelectAction()
     {
         selectingSound.Play();
         switch (currentAction)
         {
             case Action.Attack:
-                // Trigger a game of Breakout
-                battleM.ChangeState(BattleState.Breakout);
+                // Check if there are multiple enemies
+                if(battleM.enemies.Count > 1)
+                {
+                    // Find a Target
+                    battleM.ChangeState(BattleState.Targeting);
+                }
+                else
+                {
+                    // Trigger a game of Breakout
+                    battleM.ChangeState(BattleState.Breakout);
+                }
                 break;
             case Action.Skill:
                 // Open Skill Sub-Menu

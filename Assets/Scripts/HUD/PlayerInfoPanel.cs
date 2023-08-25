@@ -27,7 +27,7 @@ public class PlayerInfoPanel : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        hp.text = string.Format("{0}/{1}", battleM.PlayerOne.Health, battleM.PlayerOne.MaxHealth);
+        hp.text = string.Format("{0}/{1}", battleM.PlayerData.Health, battleM.PlayerData.MaxHealth);
         turn.text = "" + battleM.TurnNumber;
     }
 }

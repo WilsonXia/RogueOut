@@ -16,6 +16,7 @@ public abstract class Enemy : BattleObject
     public int Exp { get { return experiencePoint; } set { experiencePoint = value; } }
     public bool IsAttacking { get { return isAttacking; } }
     public string Message { get { return message; } set { message = value; } }
+    public GameObject Wall { get { return wall; } }
 
     // Methods
     public abstract void Act();

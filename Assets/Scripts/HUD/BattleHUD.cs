@@ -40,7 +40,11 @@ public class BattleHUD : MonoBehaviour
                 tutorialScreen.SetActive(false);
                 gameOverScreen.SetActive(false);
                 victoryScreen.SetActive(false);
-                goto case BattleState.Dialogue;
+                speechBox.SetActive(true);
+                actionSelect.SetActive(false);
+                playerPanel.SetActive(false);
+                sideBar.SetActive(false);
+                break;
             case BattleState.Tutorial:
                 tutorialScreen.SetActive(true);
                 actionSelect.SetActive(false);
@@ -49,7 +53,7 @@ public class BattleHUD : MonoBehaviour
             case BattleState.Dialogue:
                 speechBox.SetActive(true);
                 actionSelect.SetActive(false);
-                playerPanel.SetActive(false);
+                playerPanel.SetActive(true);
                 sideBar.SetActive(false);
                 break;
             case BattleState.Menu:
@@ -58,6 +62,8 @@ public class BattleHUD : MonoBehaviour
                 playerPanel.SetActive(true);
                 sideBar.SetActive(false);
                 break;
+            case BattleState.Targeting:
+                goto case BattleState.Dialogue;
             case BattleState.Breakout:
                 speechBox.SetActive(false);
                 actionSelect.SetActive(false);

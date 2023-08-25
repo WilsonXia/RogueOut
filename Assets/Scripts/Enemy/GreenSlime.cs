@@ -39,6 +39,7 @@ public class GreenSlime : Enemy
             // Attack
             message = " attacks!";
             isAttacking = true;
+            PlaySound();
         }
         else
         {

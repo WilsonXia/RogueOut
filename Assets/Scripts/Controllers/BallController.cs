@@ -4,9 +4,9 @@ using UnityEngine;
 
 public class BallController : MonoBehaviour
 {
-    Player player;
+    PlayerController player;
     Ball ball;
-    public void SetUp(Player p, Ball b)
+    public void SetUp(PlayerController p, Ball b)
     {
         player = p;
         ball = b;

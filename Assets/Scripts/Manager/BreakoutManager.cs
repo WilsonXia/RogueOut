@@ -46,14 +46,13 @@ public class BreakoutManager : MonoBehaviour
 
             // Controller Setup
             p_controller = GetComponent<PaddleController>();
-            p_controller.SetUp(battleM.PlayerOne, paddle);
+            p_controller.SetUp(battleM.PlayerControl, paddle);
             b_controller = GetComponent<BallController>();
-            b_controller.SetUp(battleM.PlayerOne, ball);
+            b_controller.SetUp(battleM.PlayerControl, ball);
             
             // Bricks and Bounding Box
             bricks = new List<GameObject>();
             boundPoint = boundingBox.GetComponent<SpriteRenderer>().bounds.max;
-            gameTimer = gameTime;
             started = true;
         }
     }
@@ -69,6 +68,7 @@ public class BreakoutManager : MonoBehaviour
         lifeLost = false;
         score = 0;
         timer = 0;
+        gameTimer = gameTime;
         DestroyBricks();
         CreateWall();
     }

@@ -7,6 +7,7 @@ public enum BattleState
     Tutorial,
     Start,
     Menu,
+    Targeting,
     Breakout,
     Dialogue,
     GameOver,
@@ -23,6 +24,7 @@ public class BattleManager : MonoBehaviour
     public GameObject breakoutManager;
     public BattleHUD hud;
     SpeechBox sBox;
+    EnemySpawner enemySpawner;
 
     public List<GameObject> enemies;
     GameObject target;
@@ -36,22 +38,21 @@ public class BattleManager : MonoBehaviour
     // Properties
     public BattleState State { get { return currentState; } }
     public BreakoutManager Breakout { get { return breakoutManager.GetComponent<BreakoutManager>(); } }
-    public Player PlayerOne { get { return player.GetComponent<Player>(); } }
+    public PlayerController PlayerControl { get { return player.GetComponent<PlayerController>(); } }
+    public PlayerData PlayerData { get { return player.GetComponent<PlayerData>(); } }
     public int TurnNumber { get { return turnNumber; } }
 
     void Start()
     {
         // Connect components
-        PlayerOne.battleM = this;
         sBox = hud.Speech;
         // Setup turn sequence
         turnSequence = new Queue<GameObject>();
         turnNumber = 1;
-        // Setup Target
-        if (enemies.Count == 1)
-        {
-            target = enemies[0];
-        }
+        // Setup Enemies
+        enemySpawner = GetComponent<EnemySpawner>();
+        enemies = enemySpawner.SpawnEnemies();
+        target = enemies[0];
         // Defaults
         timer = 0;
         if (useTutorial)
@@ -76,7 +77,7 @@ public class BattleManager : MonoBehaviour
                     timer = 0;
                     SetUpTurnOrder();
                     actingObject = turnSequence.Peek();
-                    CheckTurn();
+                    UseTurn();
                 }
                 break;
             case BattleState.Dialogue:
@@ -84,7 +85,7 @@ public class BattleManager : MonoBehaviour
                 if (timer > 2.5f)
                 {
                     timer = 0;
-                    if(turnSequence.Count <= 0) 
+                    if (turnSequence.Count <= 0) 
                     {
                         SetUpTurnOrder();
                         actingObject = turnSequence.Peek();
@@ -93,9 +94,86 @@ public class BattleManager : MonoBehaviour
                     NextTurn();
                 }
                 break;
+            case BattleState.Breakout:
+                foreach (GameObject go in enemies)
+                {
+                    go.GetComponent<SpriteRenderer>().color = Color.white;
+                }
+                break;
+            case BattleState.Targeting:
+                // Show what is being selected
+                sBox.SetMessage("Select a target.");
+                Color tmp = target.GetComponent<SpriteRenderer>().color;
+                tmp.a = 0.7f;
+                foreach(GameObject go in enemies)
+                {
+                    if (go.Equals(target))
+                    {
+                        go.GetComponent<SpriteRenderer>().color = Color.white;
+                    }
+                    else
+                    {
+                        go.GetComponent<SpriteRenderer>().color = tmp;
+                    }
+                }
+                break;
             default:
+                if (PlayerData.IsDead)
+                {
+                    ChangeState(BattleState.GameOver);
+                }
+                else if (enemies.Count == 0)
+                {
+                    ChangeState(BattleState.Victory);
+                }
                 break;
         }
+    }
+
+    public void ChangeState(BattleState newState)
+    {
+        // Used to hide graphics, decides player attack
+        hud.ShowUI(newState);
+        switch (newState)
+        {
+            case BattleState.Menu:
+                Debug.Log(enemies.Count);
+                break;
+            case BattleState.Breakout:
+                Breakout.wallPrefab = target.GetComponent<Enemy>().Wall;
+                breakoutManager.SetActive(true);
+                Breakout.StartGame();
+                break;
+            case BattleState.Dialogue:
+                breakoutManager.SetActive(false);
+                if (currentState == BattleState.Breakout)
+                {
+                    // This means attack was selected
+                    // Damage Multiplier (Based on how well you did in Breakout)
+                    float damage = PlayerData.Attack;
+
+                    if (Breakout.BricksLeft >= 7)
+                    {
+                        damage = damage * 0.4f;
+
+                    }
+                    else if (Breakout.BricksLeft >= 4)
+                    {
+                        damage = damage * 0.7f;
+
+                    }
+                    int playerDamage = (int)damage;
+                    sBox.SetMessage(string.Format("You attacked and did {0} damage.", playerDamage));
+                    Debug.Log(string.Format("You attacked and did {0} damage.", playerDamage));
+                    PlayerData.PlaySound();
+                    target.GetComponent<Enemy>().TakeDamage(playerDamage);
+                }
+                break;
+            default:
+                breakoutManager.SetActive(false);
+                break;
+        }
+        currentState = newState;
     }
 
     /// <summary>
@@ -105,7 +183,7 @@ public class BattleManager : MonoBehaviour
     void SetUpTurnOrder()
     {
         GameObject fastestEnemy = enemies[0];
-        int playerSpeed = PlayerOne.Speed;
+        int playerSpeed = PlayerData.Speed;
         // Get the fastest Enemy
         foreach (GameObject enemy in enemies)
         {
@@ -116,7 +194,6 @@ public class BattleManager : MonoBehaviour
         }
         int topEnemySpeed = fastestEnemy.GetComponent<Enemy>().Speed;
         // Decide order based on speed
-        Debug.Log(string.Format("Enemy Spd: {0}  Player Spd: {1}", topEnemySpeed, playerSpeed));
         if (topEnemySpeed < playerSpeed)
         {
             EnqueuePlayer();
@@ -128,7 +205,6 @@ public class BattleManager : MonoBehaviour
         else
         {
             float chance = Random.value;
-            Debug.Log(string.Format("Chance: {0}, < 0.5f? {1}", chance, chance < 0.5f));
             if ( chance < 0.5f)
             {
                 EnqueuePlayer();
@@ -144,11 +220,13 @@ public class BattleManager : MonoBehaviour
         // Make a makeshift list to hold the dead enemies
         // In the loop, add enemies that are alive into the new queue
         // Then empty the dead enemies.
+        // Also change the target at the end
         List<GameObject> dumpList = new List<GameObject>();
         Queue<GameObject> newSequence = new Queue<GameObject>();
         while (turnSequence.Count > 0)
         {
             BattleObject battler = turnSequence.Dequeue().GetComponent<BattleObject>();
+            
             if (!battler.IsDead)
             {
                 newSequence.Enqueue(battler.gameObject);
@@ -163,12 +241,17 @@ public class BattleManager : MonoBehaviour
             // Remove dead enemies in the dumplist
             for (int j = 0; j < enemies.Count; j++)
             {
+                GameObject enemy = enemies[j];
                 // Check if they are the same enemy
-                if (dumpList[i] == enemies[j])
+                if (dumpList[i] == enemy)
                 {
-                    // Remove it
+                    // Remove that enemy and move to the next
                     enemies.RemoveAt(j);
                     j = enemies.Count;
+                }
+                if (target = enemy)
+                {
+                    target = enemies[0];
                 }
             }
             Destroy(dumpList[i]);
@@ -177,37 +260,45 @@ public class BattleManager : MonoBehaviour
     }
     void EnqueuePlayer()
     {
-        Debug.Log(string.Format("Player first"));
         // Player goes first
         turnSequence.Enqueue(player);
         // Followed by enemies
-        foreach (GameObject enemy in enemies)
+        for (int i = 0; i < enemies.Count; i++)
         {
-            turnSequence.Enqueue(enemy);
+            GameObject enemy = enemies[i];
+            if (!enemy.GetComponent<Enemy>().IsDead)
+            {
+                turnSequence.Enqueue(enemy);
+            }
+            else
+            {
+                enemies.RemoveAt(i);
+                Destroy(enemy);
+                i--;
+            }
         }
     }
     void EnqueueEnemy()
     {
-        Debug.Log(string.Format("Enemy first"));
-        int playerSpeed = PlayerOne.Speed;
-        // Enemies that are faster go first
-        foreach (GameObject enemy in enemies)
+        for (int i = 0; i < enemies.Count; i++)
         {
-            int enemySpeed = enemy.GetComponent<Enemy>().Speed;
-            // If player is not in queue, AND player is faster than that enemy
-            if (!turnSequence.Contains(player) && enemySpeed < playerSpeed)
+            GameObject enemy = enemies[i];
+            if (!enemy.GetComponent<Enemy>().IsDead)
             {
-                // Add the player into the queue
-                turnSequence.Enqueue(player);
+                turnSequence.Enqueue(enemy);
             }
-            // Adds all enemies after execution
-            turnSequence.Enqueue(enemy);
+            else
+            {
+                enemies.RemoveAt(i);
+                Destroy(enemy);
+                i--;
+            }
         }
+        turnSequence.Enqueue(player);
     }
-
     public void NextTurn()
     {
-        if (PlayerOne.IsDead)
+        if (PlayerData.IsDead)
         {
             ChangeState(BattleState.GameOver);
         }
@@ -222,22 +313,20 @@ public class BattleManager : MonoBehaviour
             // Check if turn sequence is empty
             if (turnSequence.Count <= 0)
             {
+                CleanSequence();
                 SetUpTurnOrder();
                 turnNumber++;
             }
             actingObject = turnSequence.Peek();
-            CheckTurn();
+            UseTurn();
         }
     }
-    void CheckTurn()
+    void UseTurn()
     {
         // if Player Turn
         if (actingObject.Equals(player))
         {
-            //if (currentState == BattleState.Dialogue)
-            //{
-                ChangeState(BattleState.Menu);
-            //}
+            ChangeState(BattleState.Menu);
         }
         else // if Enemy Turn
         {
@@ -246,57 +335,19 @@ public class BattleManager : MonoBehaviour
             // Enemy Acts
             Enemy e = actingObject.GetComponent<Enemy>();
             e.Act();
-            e.PlaySound();
             // Show Message
             sBox.SetMessage(string.Format("{0}{1}", e.Name, e.Message));
+            Debug.Log(string.Format("{0}{1}", e.Name, e.Message));
             // Respond to enemy's action
             if (e.IsAttacking)
             {
-                PlayerOne.TakeDamage(e.Attack);
+                PlayerData.TakeDamage(e.Attack);
             }
         }
     }
-
-    public void ChangeState(BattleState newState)
-    {
-        // Used to hide graphics, decides player attack
-        hud.ShowUI(newState);
-        switch (newState)
-        {
-            case BattleState.Breakout:
-                breakoutManager.SetActive(true);
-                Breakout.StartGame();
-                break;
-            case BattleState.Dialogue:
-                breakoutManager.SetActive(false);
-                if (currentState == BattleState.Breakout)
-                {
-                    // This means attack was selected
-                    // Damage Multiplier (Based on how well you did in Breakout)
-                    float damage = PlayerOne.Attack;
-
-                    if (Breakout.BricksLeft >= 7)
-                    {
-                        damage = damage * 0.4f;
-
-                    }
-                    else if (Breakout.BricksLeft >= 4)
-                    {
-                        damage = damage * 0.7f;
-
-                    }
-                    int playerDamage = (int)damage;
-                    sBox.SetMessage(string.Format("You attacked and did {0} damage.", playerDamage));
-                    PlayerOne.PlaySound();
-                    target.GetComponent<Enemy>().TakeDamage(playerDamage);
-                }
-                break;
-            default:
-                breakoutManager.SetActive(false);
-                break;
-        }
-        currentState = newState;
-    }
-
     
+    public void SetTarget(GameObject newTarget)
+    {
+        target = newTarget;
+    }
 }

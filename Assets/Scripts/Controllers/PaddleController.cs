@@ -4,9 +4,9 @@ using UnityEngine;
 
 public class PaddleController : MonoBehaviour
 {
-    Player player;
+    PlayerController player;
     Paddle paddle;
-    public void SetUp(Player p, Paddle pad)
+    public void SetUp(PlayerController p, Paddle pad)
     {
         player = p;
         paddle = pad;
