@@ -11,7 +11,7 @@ public class SampleMapData : MapData
 
     protected override void SetUp() 
     {
-        mapName = "Freddy";
+        mapName = "Slime Dungeon";
         numberOfRooms = 6;
         treasureRooms = 1;
         eventRooms = 2;
@@ -52,6 +52,6 @@ public class SampleMapData : MapData
             roomsMade[i].transform.position = new Vector3(0, 0);
             roomsMade[i].name = roomsMade[i].name + i;
         }
-        mapGenerator.GenerateCustomMap(roomsMade);
+        mapGenerator.GenerateMap(roomsMade);
     }
 }

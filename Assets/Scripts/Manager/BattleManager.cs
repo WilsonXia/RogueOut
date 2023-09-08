@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public enum BattleState
 {
@@ -20,12 +21,11 @@ public class BattleManager : MonoBehaviour
     [SerializeField]
     BattleState currentState;
     // References
-    public GameObject player;
     public GameObject breakoutManager;
     public BattleHUD hud;
     SpeechBox sBox;
     EnemySpawner enemySpawner;
-
+    
     public List<GameObject> enemies;
     GameObject target;
     // Turn Sequence
@@ -38,8 +38,8 @@ public class BattleManager : MonoBehaviour
     // Properties
     public BattleState State { get { return currentState; } }
     public BreakoutManager Breakout { get { return breakoutManager.GetComponent<BreakoutManager>(); } }
-    public PlayerController PlayerControl { get { return player.GetComponent<PlayerController>(); } }
-    public PlayerData PlayerData { get { return player.GetComponent<PlayerData>(); } }
+    public PlayerController PlayerControl { get { return GameData.instance.PlayerController; } }
+    public PlayerData PlayerData { get { return GameData.instance.Player; } }
     public int TurnNumber { get { return turnNumber; } }
 
     void Start()
@@ -51,6 +51,10 @@ public class BattleManager : MonoBehaviour
         turnNumber = 1;
         // Setup Enemies
         enemySpawner = GetComponent<EnemySpawner>();
+        if(GameData.instance.Map != null)
+        {
+            enemySpawner.enemyPrefabs = GameData.instance.Map.currentRoom.GetComponent<EnemyRoom>().enemyPrefabs;
+        }
         enemies = enemySpawner.SpawnEnemies();
         target = enemies[0];
         // Defaults
@@ -117,6 +121,17 @@ public class BattleManager : MonoBehaviour
                     }
                 }
                 break;
+            case BattleState.Victory:
+                // Enter Levelup Phase and level up player
+                GameData.instance.Player.Attack += 2;
+                // Switch scenes 1sec after
+                timer += Time.deltaTime;
+                if(timer > 1f)
+                {
+                    GameData.instance.ChangeState(GameState.Map);
+                    SceneManager.LoadScene("Map 1");
+                }
+                break;
             default:
                 if (PlayerData.IsDead)
                 {
@@ -148,25 +163,7 @@ public class BattleManager : MonoBehaviour
                 breakoutManager.SetActive(false);
                 if (currentState == BattleState.Breakout)
                 {
-                    // This means attack was selected
-                    // Damage Multiplier (Based on how well you did in Breakout)
-                    float damage = PlayerData.Attack;
-
-                    if (Breakout.BricksLeft >= 7)
-                    {
-                        damage = damage * 0.4f;
-
-                    }
-                    else if (Breakout.BricksLeft >= 4)
-                    {
-                        damage = damage * 0.7f;
-
-                    }
-                    int playerDamage = (int)damage;
-                    sBox.SetMessage(string.Format("You attacked and did {0} damage.", playerDamage));
-                    Debug.Log(string.Format("You attacked and did {0} damage.", playerDamage));
-                    PlayerData.PlaySound();
-                    target.GetComponent<Enemy>().TakeDamage(playerDamage);
+                    CalculatePlayerDamage();
                 }
                 break;
             default:
@@ -174,6 +171,28 @@ public class BattleManager : MonoBehaviour
                 break;
         }
         currentState = newState;
+    }
+
+    void CalculatePlayerDamage()
+    {
+        // This means attack was selected
+        // Damage Multiplier (Based on how well you did in Breakout)
+        float damage = PlayerData.Attack;
+
+        if (Breakout.BricksLeft >= 7)
+        {
+            damage = damage * 0.7f;
+
+        }
+        else if (Breakout.BricksLeft == 0)
+        {
+            damage *= 2f;
+        }
+        int playerDamage = (int)damage;
+        sBox.SetMessage(string.Format("You attacked and did {0} damage.", playerDamage));
+        Debug.Log(string.Format("You attacked and did {0} damage.", playerDamage));
+        PlayerData.PlaySound();
+        target.GetComponent<Enemy>().TakeDamage(playerDamage);
     }
 
     /// <summary>
@@ -249,7 +268,7 @@ public class BattleManager : MonoBehaviour
                     enemies.RemoveAt(j);
                     j = enemies.Count;
                 }
-                if (target = enemy)
+                if (target == enemy && enemies.Count > 0)
                 {
                     target = enemies[0];
                 }
@@ -261,7 +280,7 @@ public class BattleManager : MonoBehaviour
     void EnqueuePlayer()
     {
         // Player goes first
-        turnSequence.Enqueue(player);
+        turnSequence.Enqueue(GameData.instance.Player.gameObject);
         // Followed by enemies
         for (int i = 0; i < enemies.Count; i++)
         {
@@ -294,7 +313,7 @@ public class BattleManager : MonoBehaviour
                 i--;
             }
         }
-        turnSequence.Enqueue(player);
+        turnSequence.Enqueue(GameData.instance.Player.gameObject);
     }
     public void NextTurn()
     {
@@ -324,7 +343,7 @@ public class BattleManager : MonoBehaviour
     void UseTurn()
     {
         // if Player Turn
-        if (actingObject.Equals(player))
+        if (actingObject.Equals(GameData.instance.Player.gameObject))
         {
             ChangeState(BattleState.Menu);
         }

@@ -26,21 +26,32 @@ public class RoomDetailBox : MonoBehaviour
     // Generation Details
     int numOfEnemies;
     float margin;
-    // Start is called before the first frame update
-    private void Start()
-    {
-        roomLabel = roomLabelObject.GetComponent<TextMeshProUGUI>();
-        margin = 80f;
-    }
-    public void SetUp(GameObject r)
-    {
-        CleanDetails();
-        room = r.GetComponent<Room>();
 
+    private void Update()
+    {
+        if(GameData.instance.map.changeFlag)
+        {
+            GameData.instance.map.changeFlag = false;
+            ChangeBox();
+        }
+    }
+
+    void ChangeBox()
+    {
+        // Sets up Detail Box if first launched
+        if(roomLabel == null)
+        {
+            roomLabel = roomLabelObject.GetComponent<TextMeshProUGUI>();
+            margin = 80f;
+        }
+        CleanDetails();
+
+        // Label Setup
+        room = GameData.instance.map.SelectedRoom;
         roomName = room.type.ToString() + " Room";
         roomLabel.text = roomName;
         roomLabel.color = Color.white;
-        GetComponent<Image>().color = room.GetComponent<SpriteRenderer>().color;
+        GetComponent<Image>().color = room.GetComponent<SpriteRenderer>().color; // Change color of the box to match the room
         switch (room.type)
         {
             case RoomType.Enemy:

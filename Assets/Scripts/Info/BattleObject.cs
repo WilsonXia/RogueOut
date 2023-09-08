@@ -17,10 +17,10 @@ public abstract class BattleObject : MonoBehaviour
 
     // Properties
     public string Name { get { return name; } }
-    public int MaxHealth { get { return maxHealth; } }
+    public int MaxHealth { get { return maxHealth; } set { maxHealth = value; } }
     public int Health { get { return health; } }
-    public int Attack { get { return attack; } }
-    public int Speed { get { return speed; } }
+    public int Attack { get { return attack; } set { attack = value; } }
+    public int Speed { get { return speed; } set { speed = value; } }
     public bool IsDead { get { return isDead; } }
 
     // Methods

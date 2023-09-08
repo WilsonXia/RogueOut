@@ -5,6 +5,7 @@ using UnityEngine;
 public class MapGenerator : MonoBehaviour
 {
     MapData mapData;
+    ArrowPlacer arrowPlacer;
     // Kinds of Rooms
     public List<GameObject> roomPrefabs;
     // Starting Pos
@@ -24,16 +25,7 @@ public class MapGenerator : MonoBehaviour
     {
         // Obtain map data
         ObtainMapData();
-
-        // Number of Rooms setup
-        if (numberOfRooms < 4)
-        {
-            numberOfRooms = 4;
-        }
-        else if (numberOfRooms > 9)
-        {
-            numberOfRooms = 9;
-        }
+        arrowPlacer = GetComponent<ArrowPlacer>();
     }
     #region Starting Functions
     void ObtainMapData()
@@ -88,7 +80,11 @@ public class MapGenerator : MonoBehaviour
         // Send Feedback to MapData
         mapData.ReceiveMap(rooms);
     }
-    public void GenerateCustomMap(GameObject[] roomsMade)
+    /// <summary>
+    /// Custom generation using MapData
+    /// </summary>
+    /// <param name="roomsMade"></param>
+    public void GenerateMap(GameObject[] roomsMade)
     {
         rooms = roomsMade;
         numberOfRooms = rooms.Length;
@@ -96,6 +92,8 @@ public class MapGenerator : MonoBehaviour
         mapData.ReceiveMap(rooms);
     }
     #endregion
+
+    #region Edge Creation
     void DistributeRemainingEdges()
     {
         int index = 3;
@@ -140,6 +138,9 @@ public class MapGenerator : MonoBehaviour
         rooms[roomB].GetComponent<Room>().visited = true;
         PairRooms(roomA, roomB);
     }
+    #endregion
+
+    #region Room Creation
     GameObject CreateRandomRoom()
     {
         RoomType rType;
@@ -188,17 +189,23 @@ public class MapGenerator : MonoBehaviour
         if (room.GetComponent<Room>() is EnemyRoom)
         {
             EnemyRoom eRoom = room.GetComponent<EnemyRoom>();
-            eRoom.numberOfEnemies = Random.Range(1, 4 + 1);
+            eRoom.numberOfEnemies = Random.Range(1, 3 + 1);
             mapData.SendEnemyData(room);
         }
+        room.transform.parent = transform;
         return room;
     }
-    Vector2 GetRandomPosition()
+    void DeleteRoom(int index)
     {
-        float x = Mathf.Round(Random.Range(-4f, 4f));
-        float y = Mathf.Round(Random.Range(-3f, 3f));
-        return new Vector2(x, y);
+        for(int i = 0; i < numberOfRooms; i++)
+        {
+            adjacencyMatrix[index, i] = 0;
+            adjacencyMatrix[i, index] = 0;
+        }
+        Destroy(rooms[index].gameObject);
     }
+    #endregion
+
     bool IsOverlapping(Room roomToCheck, Vector3 pos)
     {
         bool verdict = false;
@@ -266,7 +273,8 @@ public class MapGenerator : MonoBehaviour
             if (errorCount > 5)
             {
                 successfullyPaired = true;
-                Debug.Log("Looped too long");
+                Debug.Log("Looped too long, deleting room");
+                DeleteRoom(roomB);
             }
             errorCount++;
         }
@@ -274,26 +282,39 @@ public class MapGenerator : MonoBehaviour
     void PairUpDown(Room baseRoom, Room attatchingRoom)
     {
         baseRoom.up = attatchingRoom;
-        attatchingRoom.down = baseRoom;
+        //attatchingRoom.down = baseRoom;
         attatchingRoom.MoveAbove(baseRoom);
+
+        // Attatch the arrow above the baseRoom
+        GameObject arrow = arrowPlacer.PlaceArrowUp(baseRoom.Position + new Vector2(0, spacing.y));
+        arrow.transform.parent = baseRoom.transform;
     }
     void PairDownUp(Room baseRoom, Room attatchingRoom)
     {
         baseRoom.down = attatchingRoom;
-        attatchingRoom.up = baseRoom;
+        //attatchingRoom.up = baseRoom;
         attatchingRoom.MoveBelow(baseRoom);
+        // Attatch the arrow below the baseRoom
+        GameObject arrow = arrowPlacer.PlaceArrowDown(baseRoom.Position - new Vector2(0, spacing.y));
+        arrow.transform.parent = baseRoom.transform;
     }
     void PairLeftRight(Room baseRoom, Room attatchingRoom)
     {
         baseRoom.left = attatchingRoom;
-        attatchingRoom.right = baseRoom;
+        //attatchingRoom.right = baseRoom;
         attatchingRoom.MoveLeft(baseRoom);
+        // Attatch the arrow Left the baseRoom
+        GameObject arrow = arrowPlacer.PlaceArrowLeft(baseRoom.Position - new Vector2(spacing.x, 0));
+        arrow.transform.parent = baseRoom.transform;
     }
     void PairRightLeft(Room baseRoom, Room attatchingRoom)
     {
         baseRoom.right = attatchingRoom;
-        attatchingRoom.left = baseRoom;
+        //attatchingRoom.left = baseRoom;
         attatchingRoom.MoveRight(baseRoom);
+        // Attatch the arrow Right the baseRoom
+        GameObject arrow = arrowPlacer.PlaceArrowRight(baseRoom.Position + new Vector2(spacing.x, 0));
+        arrow.transform.parent = baseRoom.transform;
     }
     #endregion
     private void OnDrawGizmos()
@@ -360,5 +381,11 @@ public class MapGenerator : MonoBehaviour
     //        }
     //    }
     //    return verdict;
+    //}
+    //Vector2 GetRandomPosition()
+    //{
+    //    float x = Mathf.Round(Random.Range(-4f, 4f));
+    //    float y = Mathf.Round(Random.Range(-3f, 3f));
+    //    return new Vector2(x, y);
     //}
 }

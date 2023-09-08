@@ -7,6 +7,6 @@ public class CreditList
     /* OpenGameArt.org
      * Credits:
      * Music: Mathew Pablo
-     * Art: Hyptosis, Nidhoggn, Andrew J Hamilton, yd
+     * Art: Hyptosis, Nidhoggn, Andrew J Hamilton, yd, AngryMeteor.com
      */
 }

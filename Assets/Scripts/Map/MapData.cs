@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class MapData : MonoBehaviour
 {
@@ -17,39 +18,60 @@ public class MapData : MonoBehaviour
     public List<GameObject> encounterableEnemies;
     //public List<Room> roomParts;
 
-    public PlayerController player;
     public GameObject[] rooms;
     public GameObject currentRoom;
+    GameObject selectedRoom;
     Color originalRoomColor;
-
-    public RoomDetailBox rddetailBox;
+    
+    public AudioSource audioSource;
     protected VisualManager visualManager;
-    // Custom Generation
     protected MapGenerator mapGenerator;
+    public bool changeFlag;
+
+    public static MapData instance;
 
     // Properties
     public Room CurrentRoom { get { return currentRoom.GetComponent<Room>(); } }
+    public Room SelectedRoom { get { return selectedRoom.GetComponent<Room>(); } }
+
+    protected void Awake()
+    {
+        if(instance != null && instance != this)
+        {
+            Destroy(gameObject);
+        }
+        else
+        {
+            instance = this;
+        }
+    }
 
     protected virtual void Start()
     {
-        player = GetComponent<PlayerController>();
-        visualManager = GetComponent<VisualManager>();
-        GetComponent<MapController>().SetUp(player, this);
-        SetUp();
+        audioSource = GetComponent<AudioSource>();
+        
+        if (GameData.instance.map == null)
+        {
+            visualManager = GetComponent<VisualManager>();
+            GetComponent<MapController>().SetUp(GameData.instance.PlayerController, this);
+            SetUp();
 
-        mapGenerator.StartGeneration();
-        rddetailBox.SetUp(currentRoom);
+            mapGenerator.StartGeneration();
+            GameData.instance.map = this;
+        }
+        DontDestroyOnLoad(gameObject);
+    }
+    protected void Update()
+    {
+        if (selectedRoom != null)
+        {
+            visualManager.SingleSelectedAnimation(selectedRoom);
+        }
     }
 
     protected virtual void SetUp() { }
 
     public virtual void GenerateMap() { }
-
-    protected void Update()
-    {
-        if(currentRoom != null)
-            visualManager.SingleSelectedAnimation(currentRoom);
-    }
 
     public void ReceiveMap(GameObject[] rooms)
     {
@@ -75,27 +97,43 @@ public class MapData : MonoBehaviour
         // Reset the color of the current room
         // change room
         // Save color
-        if(originalRoomColor != null)
+        audioSource.Play();
+        if(selectedRoom != null)
         {
-            currentRoom.GetComponent<SpriteRenderer>().color = originalRoomColor;
+            selectedRoom.GetComponent<SpriteRenderer>().color = originalRoomColor;
         }
         switch (direction)
         {
             case 2:
-                currentRoom = CurrentRoom.up.gameObject;
+                selectedRoom = CurrentRoom.up.gameObject;
                 break;
             case 1:
-                currentRoom = CurrentRoom.right.gameObject;
+                selectedRoom = CurrentRoom.right.gameObject;
                 break;
             case -2:
-                currentRoom = CurrentRoom.down.gameObject;
+                selectedRoom = CurrentRoom.down.gameObject;
                 break;
             case -1:
-                currentRoom = CurrentRoom.left.gameObject;
+                selectedRoom = CurrentRoom.left.gameObject;
                 break;
         }
-        rddetailBox.SetUp(currentRoom);
-        originalRoomColor = currentRoom.GetComponent<SpriteRenderer>().color;
+        changeFlag = true;
+        originalRoomColor = selectedRoom.GetComponent<SpriteRenderer>().color;
+    }
+    public void SelectRoom()
+    {
+        currentRoom = selectedRoom;
+        Room room = currentRoom.GetComponent<Room>();
+        // Transition scenes based on room type
+        switch (room.type)
+        {
+            case RoomType.Enemy:
+                GameData.instance.ChangeState(GameState.Battle);
+                SceneManager.LoadScene("Battle");
+                break;
+            default:
+                break;
+        }
     }
     #endregion
 }

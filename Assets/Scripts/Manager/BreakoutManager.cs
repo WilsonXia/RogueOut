@@ -25,7 +25,6 @@ public class BreakoutManager : MonoBehaviour
     // Fields
     int lives;
     bool lifeLost;
-    int score;
     float timer;
     
     public float gameTime;
@@ -66,11 +65,11 @@ public class BreakoutManager : MonoBehaviour
         // Fields
         lives = 1;
         lifeLost = false;
-        score = 0;
         timer = 0;
         gameTimer = gameTime;
         DestroyBricks();
         CreateWall();
+        ball.gameObject.SetActive(true);
     }
     // Update is called once per frame
     void Update()
@@ -119,6 +118,7 @@ public class BreakoutManager : MonoBehaviour
     {
         // Clear the Game
         ball.Reset();
+        ball.gameObject.SetActive(false);
         paddle.Reset();
 
         battleM.ChangeState(BattleState.Dialogue);
@@ -202,10 +202,6 @@ public class BreakoutManager : MonoBehaviour
                 // Brick Response
                 Brick brick = br.GetComponent<Brick>();
                 brick.OnHit();
-                if (brick.GetComponent<ObjectInfo>().IsDead)
-                {
-                    score++;
-                }
                 // Ball Response
                 // Obtain deltaX and deltaY
                 if (ball.MoveInfo.Direction.x > 0)

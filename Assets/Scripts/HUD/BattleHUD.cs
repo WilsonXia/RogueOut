@@ -26,7 +26,24 @@ public class BattleHUD : MonoBehaviour
     {
         if(battleM.State == BattleState.Breakout)
         {
-            scoreText.text = string.Format("{0}", battleM.Breakout.BricksLeft);
+            int bricksLeft = battleM.Breakout.BricksLeft;
+            if(bricksLeft == 10)
+            {
+                scoreText.text = "";
+            }
+            else if (bricksLeft >= 7)
+            {
+                scoreText.text = "Okay";
+            }
+            else if (bricksLeft > 0)
+            {
+                scoreText.text = "Nice!";
+            }
+            else if (bricksLeft == 0)
+            {
+                scoreText.text = "Epic!";
+            }
+            
             timeText.text = string.Format("{0}", (int) battleM.Breakout.Timer);
         }
         
