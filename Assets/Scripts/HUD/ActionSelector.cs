@@ -58,7 +58,7 @@ public class ActionSelector : MonoBehaviour
         }
         currentTarget = battleM.enemies[targetIndex];
         // Set-up target for the manager
-        battleM.SetTarget(currentTarget);
+        battleM.SetTarget(targetIndex);
         selectingSound.Play();
     }
     public void SelectTarget()
@@ -108,11 +108,13 @@ public class ActionSelector : MonoBehaviour
                 // Check if there are multiple enemies
                 if(battleM.enemies.Count > 1)
                 {
+                    battleM.SetTarget(0);
                     // Find a Target
                     battleM.ChangeState(BattleState.Targeting);
                 }
                 else
                 {
+                    battleM.SetTarget(0);
                     // Trigger a game of Breakout
                     battleM.ChangeState(BattleState.Breakout);
                 }

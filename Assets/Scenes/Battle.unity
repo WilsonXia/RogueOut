@@ -1567,7 +1567,7 @@ AudioSource:
   m_Volume: 0.05
   m_Pitch: 1
   Loop: 1
-  Mute: 0
+  Mute: 1
   Spatialize: 0
   SpatializePostEffects: 0
   Priority: 128
@@ -2441,6 +2441,7 @@ GameObject:
   - component: {fileID: 931711258}
   - component: {fileID: 931711259}
   - component: {fileID: 931711260}
+  - component: {fileID: 931711261}
   m_Layer: 0
   m_Name: Breakout Window
   m_TagString: Untagged
@@ -2484,6 +2485,9 @@ MonoBehaviour:
   wallPrefab: {fileID: 1410294782618432581, guid: 3a5cca5937efd5d4985eac5cb98d8ea8, type: 3}
   boundingBox: {fileID: 704984598}
   battleM: {fileID: 400301535}
+  colManager: {fileID: 931711261}
+  lives: 0
+  lifeLost: 0
   gameTime: 15
 --- !u!114 &931711259
 MonoBehaviour:
@@ -2507,6 +2511,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 38856f237c145ed48a93ffc9a75f3aa0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &931711261
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 931711256}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ed7568453c773743b67fd1ad94020af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &936554328

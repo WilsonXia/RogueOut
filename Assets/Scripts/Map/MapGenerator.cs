@@ -1,6 +1,7 @@
-using System.Collections;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class MapGenerator : MonoBehaviour
 {
@@ -20,6 +21,8 @@ public class MapGenerator : MonoBehaviour
 
     public bool useDebug;
     public bool useDefault;
+
+    public GameObject[] Rooms { get { return rooms; } }
 
     private void Start()
     {
@@ -44,6 +47,37 @@ public class MapGenerator : MonoBehaviour
             rooms[i].name = rooms[i].name + i;
         }
     }
+    public void StartGeneration()
+    {
+        if (useDefault)
+        {
+            GenerateRooms();
+            GenerateMap();
+        }
+        else
+        {
+            mapData.GenerateMap();
+        }
+    }
+    public void GenerateMap()
+    {
+        // Create Edges
+        StructureSetup();
+        // Send Feedback to MapData
+        mapData.ReceiveMap(rooms);
+    }
+    /// <summary>
+    /// Custom generation using MapData
+    /// </summary>
+    /// <param name="roomsMade"></param>
+    public void ReceiveRooms(GameObject[] roomsMade)
+    {
+        rooms = roomsMade;
+        numberOfRooms = rooms.Length;
+    }
+    #endregion
+
+    #region Edge Creation
     void StructureSetup()
     {
         // Creating Adjacency Matrix
@@ -61,39 +95,26 @@ public class MapGenerator : MonoBehaviour
         // Then set the visited rooms to go with other unvisited rooms
         DistributeRemainingEdges();
     }
-
-    public void StartGeneration()
+    public void ChainStructure()
     {
-        if (useDefault)
+        // Creating Adjacency Matrix
+        adjacencyMatrix = new int[numberOfRooms, numberOfRooms];
+        for (int i = 0; i < numberOfRooms; i++)
         {
-            GenerateMap();
+            for (int j = 0; j < numberOfRooms; j++)
+            {
+                adjacencyMatrix[i, j] = 0;
+            }
         }
-        else
+        for(int i = 0; i < numberOfRooms; i++)
         {
-            mapData.GenerateMap();
+            //Connect room to next room
+            if (i+1 < numberOfRooms)
+            {
+                CreateEdge(i, i + 1, true);
+            }
         }
     }
-    void GenerateMap()
-    {
-        GenerateRooms();
-        StructureSetup();
-        // Send Feedback to MapData
-        mapData.ReceiveMap(rooms);
-    }
-    /// <summary>
-    /// Custom generation using MapData
-    /// </summary>
-    /// <param name="roomsMade"></param>
-    public void GenerateMap(GameObject[] roomsMade)
-    {
-        rooms = roomsMade;
-        numberOfRooms = rooms.Length;
-        StructureSetup();
-        mapData.ReceiveMap(rooms);
-    }
-    #endregion
-
-    #region Edge Creation
     void DistributeRemainingEdges()
     {
         int index = 3;
@@ -131,12 +152,12 @@ public class MapGenerator : MonoBehaviour
             }
         }
     }
-    void CreateEdge(int roomA, int roomB)
+    void CreateEdge(int roomA, int roomB, bool useRandom = false)
     {
         adjacencyMatrix[roomA, roomB] = 1;
         rooms[roomA].GetComponent<Room>().visited = true;
         rooms[roomB].GetComponent<Room>().visited = true;
-        PairRooms(roomA, roomB);
+        PairRooms(roomA, roomB, useRandom);
     }
     #endregion
 
@@ -224,6 +245,26 @@ public class MapGenerator : MonoBehaviour
     }
 
     #region Pairing Functions
+    void PairRooms(int roomA, int roomB, bool useRandom)
+    {
+        if (!useRandom)
+        {
+            PairRooms(roomA, roomB);
+        }
+        else
+        {
+            Room a = rooms[roomA].GetComponent<Room>();
+            Room b = rooms[roomB].GetComponent<Room>();
+            if (roomA % 2 == 0)
+            {
+                PairUpDown(a, b);
+            }
+            else
+            {
+                PairRightLeft(a, b);
+            }
+        }
+    }
     void PairRooms(int roomA, int roomB)
     {
         Room a = rooms[roomA].GetComponent<Room>();

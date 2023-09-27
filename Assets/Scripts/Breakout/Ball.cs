@@ -6,6 +6,8 @@ public class Ball : Projectile
 {
     AudioSource ballSound;
     bool hasLaunched;
+    public GameObject launchTag;
+
     // Properties
     public float Left { get { return objInfo.MinX; }}
     public float Right { get { return objInfo.MaxX; }}
@@ -30,6 +32,7 @@ public class Ball : Projectile
         moveInfo.Position = new Vector2(0,-3);
         transform.position = new Vector2(0,-3);
         hasLaunched = false;
+        launchTag.SetActive(true);
     }
 
     public void Launch()
@@ -37,6 +40,7 @@ public class Ball : Projectile
         //moveInfo.Direction = new Vector2(Random.value, Random.value);
         moveInfo.Direction = Vector2.up;
         hasLaunched = true;
+        launchTag.SetActive(false);
     }
     public void Bounce(Vector2 direction)
     {

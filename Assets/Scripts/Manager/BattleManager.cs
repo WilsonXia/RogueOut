@@ -123,7 +123,8 @@ public class BattleManager : MonoBehaviour
                 break;
             case BattleState.Victory:
                 // Enter Levelup Phase and level up player
-                GameData.instance.Player.Attack += 2;
+                if(timer == 0)
+                LevelUp();
                 // Switch scenes 1sec after
                 timer += Time.deltaTime;
                 if(timer > 1f)
@@ -365,8 +366,13 @@ public class BattleManager : MonoBehaviour
         }
     }
     
-    public void SetTarget(GameObject newTarget)
+    public void SetTarget(int index)
     {
-        target = newTarget;
+        target = enemies[index];
+    }
+
+    public void LevelUp()
+    {
+        GameData.instance.Player.Attack += 2;
     }
 }

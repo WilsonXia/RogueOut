@@ -52,6 +52,7 @@ public class SampleMapData : MapData
             roomsMade[i].transform.position = new Vector3(0, 0);
             roomsMade[i].name = roomsMade[i].name + i;
         }
-        mapGenerator.GenerateMap(roomsMade);
+        mapGenerator.ReceiveRooms(roomsMade);
+        mapGenerator.GenerateMap();
     }
 }

@@ -21,10 +21,11 @@ public class BreakoutManager : MonoBehaviour
     public GameObject boundingBox;
     Vector2 boundPoint;
     public BattleManager battleM;
+    public BrkCollisionManager colManager;
 
     // Fields
-    int lives;
-    bool lifeLost;
+    public int lives;
+    public bool lifeLost;
     float timer;
     
     public float gameTime;
@@ -32,6 +33,9 @@ public class BreakoutManager : MonoBehaviour
     bool started = false;
 
     // Properties
+    public Ball p_Ball { get { return ball; } set { ball = value; } }
+    public Paddle p_Paddle { get { return paddle; } set { paddle = value; } }
+    public Vector2 BoundPoint { get { return boundPoint; } }
     public float Timer { get { return gameTimer; } }
     public int BricksLeft { get { return bricks.Count; } }
 
@@ -52,6 +56,9 @@ public class BreakoutManager : MonoBehaviour
             // Bricks and Bounding Box
             bricks = new List<GameObject>();
             boundPoint = boundingBox.GetComponent<SpriteRenderer>().bounds.max;
+
+            // Manager
+            colManager.SetUp(this);
             started = true;
         }
     }
@@ -71,18 +78,22 @@ public class BreakoutManager : MonoBehaviour
         CreateWall();
         ball.gameObject.SetActive(true);
     }
-    // Update is called once per frame
+    
     void Update()
     {
+        // Only work in Breakout State
         if (battleM.State == BattleState.Breakout)
         {
-            gameTimer -= Time.deltaTime;
-            if(gameTimer < 0) 
+            if (ball.Launched)
+            {
+                gameTimer -= Time.deltaTime;
+            }
+            if (gameTimer < 0)
             {
                 gameTimer = gameTime;
                 EndGame();
             }
-            if(lives > 0 && bricks.Count > 0) // If there are still lives, AND bricks to hit, play
+            if (lives > 0 && bricks.Count > 0) // If there are still lives, AND bricks to hit, play
             {
                 // Handle life lost
                 if (lifeLost)
@@ -93,24 +104,23 @@ public class BreakoutManager : MonoBehaviour
                     {
                         lifeLost = false;
                         timer = 0;
-                        ball.Launch();
                     }
                 }
-                BrickCheck();
-                CleanList(bricks);
+                colManager.BrickCheck(bricks);
+                colManager.CleanList(bricks);
             }
             else
             {
                 timer += Time.deltaTime;
-                if (timer > 0.9f)
+                if (timer > 0.8f)
                 {
                     timer = 0;
                     EndGame();
                 }
             }
-            BoundsCheck();
-            PaddleBoundsCheck();
-            PaddleCheck();
+            colManager.BoundsCheck();
+            colManager.PaddleBoundsCheck();
+            colManager.PaddleCheck();
         }
     }
 
@@ -124,147 +134,6 @@ public class BreakoutManager : MonoBehaviour
         battleM.ChangeState(BattleState.Dialogue);
     }
 
-    #region Collisions
-    // Check Collisions
-    void BoundsCheck()
-    {
-        // Check the ball if it exceeds bounds
-        if (LeftBoundCheck(ball.ObjectInfo.MaxX))
-        {
-            ball.MoveInfo.Position = new Vector2(boundPoint.x - ball.ObjectInfo.Radius, ball.MoveInfo.Position.y);
-            if (ball.MoveInfo.Direction.x > 0)
-            {
-                ball.BounceX();
-            }
-        }
-        else if (RightBoundCheck(ball.ObjectInfo.MinX))
-        {
-            ball.MoveInfo.Position = new Vector2(-boundPoint.x + ball.ObjectInfo.Radius, ball.MoveInfo.Position.y);
-            if (ball.MoveInfo.Direction.x < 0)
-            {
-                ball.BounceX();
-            }
-        }
-        if (TopBoundCheck(ball.ObjectInfo.MaxY))
-        {
-            ball.MoveInfo.Position = new Vector2(ball.MoveInfo.Position.x, boundPoint.y - ball.ObjectInfo.Radius);
-            if (ball.MoveInfo.Direction.y > 0)
-            {
-                ball.BounceY();
-            }
-        }
-        else if (BottomBoundCheck(ball.ObjectInfo.MinY) && !lifeLost)
-        {
-            lives--;
-            lifeLost = true;
-            ball.Reset();
-        }
-        // Check other projectiles LATER
-    }// Fix when other projectiles come
-    void PaddleBoundsCheck()
-    {
-        if (LeftBoundCheck(paddle.ObjectInfo.MaxX))
-        {
-            paddle.MoveInfo.Position = new Vector2(boundPoint.x - paddle.ObjectInfo.Width / 2, paddle.transform.position.y);
-        }
-        else if (RightBoundCheck(paddle.ObjectInfo.MinX))
-        {
-            paddle.MoveInfo.Position = new Vector2(-boundPoint.x + paddle.ObjectInfo.Width / 2, paddle.transform.position.y);
-        }
-    }
-    #region Bound Checks
-    private bool LeftBoundCheck(float x)
-    {
-        return boundPoint.x < x;
-    }
-    private bool RightBoundCheck(float x)
-    {
-        return -boundPoint.x > x;
-    }
-    private bool TopBoundCheck(float y)
-    {
-        return boundPoint.y < y;
-    }
-    private bool BottomBoundCheck(float y)
-    {
-        return -boundPoint.y > y;
-    }
-    #endregion
-    void BrickCheck()
-    {
-        foreach (GameObject br in bricks)
-        {
-            // if a collision is detected
-            if (AABBCollision(br, ball.gameObject))
-            {
-                float deltaX, deltaY;
-                SpriteRenderer brickSprite = br.GetComponent<SpriteRenderer>();
-                // Brick Response
-                Brick brick = br.GetComponent<Brick>();
-                brick.OnHit();
-                // Ball Response
-                // Obtain deltaX and deltaY
-                if (ball.MoveInfo.Direction.x > 0)
-                {
-                    deltaX = brickSprite.bounds.min.x - ball.Right;
-                }
-                else
-                {
-                    deltaX = ball.Right - brickSprite.bounds.max.x;
-                }
-                if (ball.MoveInfo.Direction.y > 0)
-                {
-                    deltaY = brickSprite.bounds.min.y - ball.Top;
-                }
-                else
-                {
-                    deltaY = brickSprite.bounds.min.y - ball.Bottom;
-                }
-                // Compare values
-                if (deltaX > deltaY)
-                {
-                    ball.BounceX();
-                }
-                else if (deltaX < deltaY)
-                {
-                    ball.BounceY();
-                }
-                else
-                {
-                    ball.BounceX();
-                    ball.BounceY();
-                }
-                return;
-            }
-        }
-    }
-    public void PaddleCheck()
-    {
-        if (AABBCollision(ball.ObjectInfo, paddle.ObjectInfo))
-        {
-            // Count the Bounce Count
-            if (ball.MoveInfo.Direction.y < 0) // Check if going down
-            {
-                Vector2 ballPos = ball.transform.position;
-                Vector2 paddlePos = paddle.transform.position;
-                ball.Bounce(ballPos - paddlePos);
-            }
-        }
-    }
-    // Clean Dead Objects
-    public void CleanList(List<GameObject> list)
-    {
-        for (int i = 0; i < list.Count; i++)
-        {
-            GameObject go = list[i];
-            if (go.GetComponent<ObjectInfo>().IsDead)
-            {
-                Destroy(go);
-                list.RemoveAt(i);
-                i--;
-            }
-        }
-    }
     public void EmptyList(List<GameObject> list)
     {
         while (list.Count > 0)
@@ -279,20 +148,6 @@ public class BreakoutManager : MonoBehaviour
         EmptyList(bricks);
         Destroy(wallObj);
     }
-
-    // AABB Collision
-    bool AABBCollision(GameObject a, GameObject b)
-    {
-        return AABBCollision(a.GetComponent<ObjectInfo>(), b.GetComponent<ObjectInfo>());
-    }
-    bool AABBCollision(ObjectInfo a, ObjectInfo b)
-    {
-        bool verdict = a.MinX < b.MaxX && a.MaxX > b.MinX
-            && a.MinY < b.MaxY && a.MaxY > b.MinY;
-        return verdict;
-    }
-
-    #endregion
 
     void CreateBrick()
     {
